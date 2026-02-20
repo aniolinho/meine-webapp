@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meine-webapp
+  namespace: meine-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: meine-webapp
+  template:
+    metadata:
+      labels:
+        app: meine-webapp
+    spec:
+      initContainers:
+        - name: prisma-migrate
+          # use a small prebuilt image that already has the Prisma CLI installed to avoid runtime npm installs
+          image: meine-webapp-prisma-migrate:latest
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c", "prisma db push --schema /prisma/schema.prisma --url \"$DATABASE_URL\""]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: DATABASE_URL
+          volumeMounts:
+            - name: prisma-schema
+              mountPath: /prisma
+      volumes:
+        - name: prisma-schema
+          configMap:
+            name: prisma-schema
+      containers:
+        - name: meine-webapp
+          image: meine-webapp:latest
+          imagePullPolicy: Never
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: DATABASE_URL
+          ports:
+            - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: meine-webapp
+  namespace: meine-webapp
+spec:
+  type: NodePort
+  selector:
+    app: meine-webapp
+  ports:
+    - port: 80
+      targetPort: 3000
