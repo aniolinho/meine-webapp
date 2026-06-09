@@ -26,6 +26,11 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+    - name: Umgebungsinfo ausgeben
+      run: |
+        echo "Node.js Version: $(node --version)"
+        echo "npm Version: $(npm --version)"
+        echo "Betriebssystem: $(uname -a)"
     - name: Abhängigkeiten installieren
       run: npm ci
     - name: Prisma Client generieren
