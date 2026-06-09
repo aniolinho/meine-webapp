@@ -37,3 +37,17 @@ jobs:
       run: npx prisma generate
     - run: npm run build --if-present
     - run: npm test
+
+  otel-export-trace:
+    name: OpenTelemetry Export Trace
+    runs-on: ubuntu-latest
+    if: always()
+    needs: build
+    steps:
+      - name: Export Workflow Trace
+        uses: corentinmusard/otel-cicd-action@v2
+        with:
+          otlpEndpoint: ${{ secrets.DASH0_OTLP_ENDPOINT }}
+          otlpHeaders: ${{ secrets.DASH0_OTLP_HEADERS }}
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          runId: ${{ github.run_id }}
